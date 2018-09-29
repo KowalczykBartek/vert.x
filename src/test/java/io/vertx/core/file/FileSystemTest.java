@@ -36,6 +36,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.util.EnumSet;
@@ -1072,6 +1073,45 @@ public class FileSystemTest extends VertxTestBase {
         Buffer buff = Buffer.buffer(chunks * chunkSize);
         for (int i = 0; i < chunks; i++) {
           arr.result().read(buff, i * chunkSize, i * chunkSize, chunkSize, arb -> {
+            if (arb.succeeded()) {
+              if (reads.incrementAndGet() == chunks) {
+                arr.result().close(ar -> {
+                  if (ar.failed()) {
+                    fail(ar.cause().getMessage());
+                  } else {
+                    assertEquals(expected, buff);
+                    assertEquals(buff, arb.result());
+                    testComplete();
+                  }
+                });
+              }
+            } else {
+              fail(arb.cause().getMessage());
+            }
+          });
+        }
+      } else {
+        fail(arr.cause().getMessage());
+      }
+    });
+    await();
+  }
+
+  @Test
+  public void testReadAsyncWithReusedByteBuffer() throws Exception {
+    String fileName = "some-file.dat";
+    int chunkSize = 100;
+    int chunks = 10;
+    byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
+    Buffer expected = Buffer.buffer(content);
+    createFile(fileName, content);
+    AtomicInteger reads = new AtomicInteger();
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), arr -> {
+      if (arr.succeeded()) {
+        ByteBuffer byteBuffer = ByteBuffer.allocate(chunkSize);
+        Buffer buff = Buffer.buffer(chunks * chunkSize);
+        for (int i = 0; i < chunks; i++) {
+          arr.result().read(buff, byteBuffer, i * chunkSize, i * chunkSize, arb -> {
             if (arb.succeeded()) {
               if (reads.incrementAndGet() == chunks) {
                 arr.result().close(ar -> {

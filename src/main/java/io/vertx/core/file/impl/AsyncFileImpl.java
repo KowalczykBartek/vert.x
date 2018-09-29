@@ -123,14 +123,19 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
-  public synchronized AsyncFile read(Buffer buffer, int offset, long position, int length, Handler<AsyncResult<Buffer>> handler) {
+  public AsyncFile read(Buffer buffer, int offset, long position, int length, Handler<AsyncResult<Buffer>> handler) {
+    ByteBuffer bb = ByteBuffer.allocate(length);
+    return read(buffer, bb, offset, position, handler);
+  }
+
+  @Override
+  public synchronized AsyncFile read(Buffer buffer, ByteBuffer bb, int offset, long position, Handler<AsyncResult<Buffer>> handler) {
     Objects.requireNonNull(buffer, "buffer");
+    Objects.requireNonNull(bb, "byteBuffer");
     Objects.requireNonNull(handler, "handler");
     Arguments.require(offset >= 0, "offset must be >= 0");
     Arguments.require(position >= 0, "position must be >= 0");
-    Arguments.require(length >= 0, "length must be >= 0");
     check();
-    ByteBuffer bb = ByteBuffer.allocate(length);
     doRead(buffer, offset, bb, position, handler);
     return this;
   }

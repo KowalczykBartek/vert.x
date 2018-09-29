@@ -12,12 +12,15 @@
 package io.vertx.core.file;
 
 import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
+
+import java.nio.ByteBuffer;
 
 /**
  * Represents a file on the file-system which can be read from, or written to asynchronously.
@@ -116,6 +119,21 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    */
   @Fluent
   AsyncFile read(Buffer buffer, int offset, long position, int length, Handler<AsyncResult<Buffer>> handler);
+
+  /**
+   * Extended version of {@link #read(Buffer, int, long, int, Handler) read} method, allowing you to pass your own
+   * {@class java.nio.ByteBuffer} instance (the same instance can be reused for multiple reads).
+   *
+   * @param buffer  the buffer to read into
+   * @param bb  the buffer to be used by internal read method
+   * @param offset  the offset into the buffer where the data will be read
+   * @param position  the position in the file where to start reading
+   * @param handler  the handler to call when the write is complete
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  @GenIgnore
+  AsyncFile read(Buffer buffer, ByteBuffer bb, int offset, long position, Handler<AsyncResult<Buffer>> handler);
 
   /**
    * Flush any writes made to this file to underlying persistent storage.
